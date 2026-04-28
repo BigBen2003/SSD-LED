@@ -26,5 +26,8 @@
     <Setting Name="ColorWrite" Type="System.String" Scope="User">
       <Value Profile="(Default)">#ff0000</Value>
     </Setting>
+    <Setting Name="Language" Type="System.String" Scope="User">
+      <Value Profile="(Default)">auto</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

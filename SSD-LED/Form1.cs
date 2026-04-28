@@ -39,6 +39,9 @@ namespace SSD_LED
         private int tickErrorCount = 0;
         private int tickErrorCountMax = 3;
 
+        // Flag um Sprach-ComboBox-Rekursion zu vermeiden
+        private bool _isUpdatingLanguageComboBox = false;
+
         #region Debug hiding form...
         /*
         protected override void SetVisibleCore(bool value)
@@ -69,6 +72,13 @@ namespace SSD_LED
         {
             InitializeComponent();
 
+            // Übersetzungssystem initialisieren
+            TranslationManager.Instance.LoadAvailableLanguages();
+            TranslationManager.Instance.LoadSystemLanguage();
+
+            // UI-Texte übersetzen
+            ApplyTranslations();
+
             //var test = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             //var logFilePath = Path.Combine(Environment.GetEnvironmentVariable("LocalAppData"), "log.txt");
 
@@ -84,70 +94,70 @@ namespace SSD_LED
                 .WriteTo.File(logFilePath, rollingInterval: RollingInterval.Day, fileSizeLimitBytes: 1024*100)
                 .CreateLogger();
 
-            Log.Information("Starting "+ NameAndVersion());
+            Log.Information(TranslationManager.Instance.T("Starting ") + NameAndVersion());
 
             //this.Hide(); is useless here...
 
             oldIconColor = defaultColor;
             iconDefault = CreateIcon(defaultColor);
             initTrayIcon();
-            notifyIcon.Text = "Initializing...";
+            notifyIcon.Text = TranslationManager.Instance.T("Initializing...");
 
             if(!RefreshDriveList())
             {
-                DialogResult dialogResult = MessageBox.Show("Error during initialization of PhysicalDisk list - try again?", "Initialization failed...", MessageBoxButtons.YesNo);
+                DialogResult dialogResult = MessageBox.Show(TranslationManager.Instance.T("Error during initialization of PhysicalDisk list - try again?"), TranslationManager.Instance.T("Initialization failed..."), MessageBoxButtons.YesNo);
                 if (dialogResult == DialogResult.Yes)
                 {
-                    if (!RefreshDriveList())
+                        if (!RefreshDriveList())
+                            {
+                                Log.Error("Error during initialization of PhysicalDisk list");
+                                Log.CloseAndFlush();
+                                Application.Exit();
+                            }
+                        }
+                        else if (dialogResult == DialogResult.No)
+                        {
+                            Log.Error("Error during initialization of PhysicalDisk list");
+                            Log.CloseAndFlush();
+                            Application.Exit();
+                        }
+                    }
+
+                    label1.Text = NameAndVersion() + "  " + TranslationManager.Instance.T("by SIRprise");
+
+                    if(loadSettings() == false)
+                        Log.Error(TranslationManager.Instance.T("Error while parsing settings"));
+
+                    maxSpeedKBS = trackBar1.Value;
+                    textBox1.Text = maxSpeedKBS + " KB/s";
+                    textBox2.Text = trackBar2.Value + " ms";
+
+                    readTimer = new System.Timers.Timer();
+                    readTimer.Elapsed += new ElapsedEventHandler(OnReadTimeOut);
+                    readTimer.Interval = 20000;
+                    readTimer.Enabled = false;
+
+                    try
                     {
-                        Log.Error("Error during initialization of PhysicalDisk list");
+                        if(SSDActivityPerfCount())
+                        {
+                            tickErrorCount = 0;
+                        }
+                        else
+                        {
+                            tickErrorCount++;
+                        }
+                    }
+                    catch
+                    {
+                        MessageBox.Show(TranslationManager.Instance.T("Error during initialization"));
+                        Log.Error(TranslationManager.Instance.T("Error during initialization"));
                         Log.CloseAndFlush();
                         Application.Exit();
                     }
-                }
-                else if (dialogResult == DialogResult.No)
-                {
-                    Log.Error("Error during initialization of PhysicalDisk list");
-                    Log.CloseAndFlush();
-                    Application.Exit();
-                }
-            }
-
-            label1.Text = NameAndVersion() + "  by SIRprise";
-
-            if(loadSettings() == false)
-                Log.Error("Error while parsing settings");
-
-            maxSpeedKBS = trackBar1.Value;
-            textBox1.Text = maxSpeedKBS + " KB/s";
-            textBox2.Text = trackBar2.Value + " ms";
-
-            readTimer = new System.Timers.Timer();
-            readTimer.Elapsed += new ElapsedEventHandler(OnReadTimeOut);
-            readTimer.Interval = 20000;
-            readTimer.Enabled = false;
-
-            try
-            {
-                if(SSDActivityPerfCount())
-                {
-                    tickErrorCount = 0;
-                }
-                else
-                {
-                    tickErrorCount++;
-                }
-            }
-            catch
-            {
-                MessageBox.Show("Error during initialization");
-                Log.Error("Error during initialization");
-                Log.CloseAndFlush();
-                Application.Exit();
-            }
-            timer1.Enabled = true;
-            notifyIcon.Text = "";
-            //MinimizeFootprint();
+                    timer1.Enabled = true;
+                    notifyIcon.Text = "";
+                    //MinimizeFootprint();
         }
 
         #region icon stuff
@@ -161,8 +171,8 @@ namespace SSD_LED
             notifyIcon.Visible = true;
 
             //create menu items
-            MenuItem info = new MenuItem("Preferences");
-            MenuItem quit = new MenuItem("Exit");
+            MenuItem info = new MenuItem(TranslationManager.Instance.T("Preferences"));
+            MenuItem quit = new MenuItem(TranslationManager.Instance.T("Exit"));
             ContextMenu contextMenu = new ContextMenu();
 
             //add items to menu
@@ -233,6 +243,113 @@ namespace SSD_LED
             }
 
             return icon;
+        }
+        #endregion
+
+        #region Translations
+        private void ApplyTranslations()
+        {
+            var t = TranslationManager.Instance;
+
+            // Tab-Seiten
+            tabPage1.Text = t.T("Drive Setup");
+            tabPage2.Text = t.T("Other Settings");
+
+            // Labels
+            label2.Text = t.T("Activity Indicator Threshold/Scaling (Drive max. speed):");
+            label3.Text = t.T("Refresh Interval:");
+            label4.Text = t.T("Autostart setting");
+            label5.Text = t.T("Color settings");
+            lblLanguage.Text = t.T("Select Language:");
+
+            // Buttons
+            button2.Text = t.T("Close");
+            button3.Text = t.T("Indicator");
+            button4.Text = t.T("Read for 20s on C:\\");
+            button5.Text = t.T("apply");
+            btnSaveCfg.Text = t.T("Save Config");
+            btnSaveCfg2.Text = t.T("Save Config");
+            btnApplyColor.Text = t.T("apply");
+            btnColorDefault.Text = t.T("Default");
+            btnColorRead.Text = t.T("Read");
+            btnColorWrite.Text = t.T("Write");
+
+            // Checkboxes
+            checkBox1.Text = t.T("Choose single drive to monitor:");
+            checkBox2.Text = t.T("start with windows");
+            checkBox3.Text = t.T("enable color scaling (mixcolors)");
+
+            // Chart-Serien
+            chart1.Series["Read"].LegendText = t.T("Read MB/s");
+            chart1.Series["Write"].LegendText = t.T("Write MB/s");
+            chart1.Titles[0].Text = t.T("Actual Read/Write Performance:");
+
+            // Sprach-ComboBox füllen (nur wenn leer)
+            if (cbxlanguage.Items.Count == 0)
+            {
+                PopulateLanguageComboBox();
+            }
+        }
+
+        private void PopulateLanguageComboBox()
+        {
+            // Verhindere Rekursion durch Event-Handler
+            _isUpdatingLanguageComboBox = true;
+
+            try
+            {
+                Debug.WriteLine("PopulateLanguageComboBox: Started");
+                Debug.WriteLine($"cbxlanguage is null: {cbxlanguage == null}");
+
+                if (cbxlanguage == null)
+                {
+                    Debug.WriteLine("ERROR: cbxlanguage is NULL!");
+                    return;
+                }
+
+                Debug.WriteLine($"cbxlanguage.Visible: {cbxlanguage.Visible}");
+                Debug.WriteLine($"cbxlanguage.Enabled: {cbxlanguage.Enabled}");
+
+                cbxlanguage.Items.Clear();
+
+                var languages = TranslationManager.Instance.AvailableLanguagesInfo;
+                Debug.WriteLine($"Available languages count: {languages.Count}");
+
+                foreach (var lang in languages)
+                {
+                    Debug.WriteLine($"Adding language: {lang.Code} - {lang.DisplayName}");
+                    cbxlanguage.Items.Add(lang);
+                }
+
+                Debug.WriteLine($"cbxlanguage.Items.Count after adding: {cbxlanguage.Items.Count}");
+
+                // Aktuelle Sprache auswählen
+                var currentLang = TranslationManager.Instance.CurrentLanguage;
+                Debug.WriteLine($"Current language: {currentLang}");
+
+                foreach (LanguageInfo lang in cbxlanguage.Items)
+                {
+                    if (lang.Code == currentLang)
+                    {
+                        cbxlanguage.SelectedItem = lang;
+                        Debug.WriteLine($"Selected language: {lang.DisplayName}");
+                        break;
+                    }
+                }
+
+                // Falls keine Auswahl getroffen wurde, "Auto" auswählen
+                if (cbxlanguage.SelectedIndex == -1 && cbxlanguage.Items.Count > 0)
+                {
+                    cbxlanguage.SelectedIndex = 0; // Auto ist immer an erster Stelle
+                    Debug.WriteLine("Selected Auto (index 0)");
+                }
+
+                Debug.WriteLine("PopulateLanguageComboBox: Completed");
+            }
+            finally
+            {
+                _isUpdatingLanguageComboBox = false;
+            }
         }
         #endregion
 
@@ -537,11 +654,11 @@ namespace SSD_LED
                 return false;
             }
             comboBox1.Items.AddRange(instanceNames);
-            Log.Information("Found the following Physical Disks: {DriveInstances}", instanceNames);
+            Log.Information(TranslationManager.Instance.T("Found the following Physical Disks: ") + "{DriveInstances}", instanceNames);
             if(instanceNames.Length<1)
             {
-                MessageBox.Show("Error during initialization: No physical disks found!");
-                Log.Error("Error during initialization: No physical disks found!");
+                MessageBox.Show(TranslationManager.Instance.T("Error during initialization: No physical disks found!"));
+                Log.Error(TranslationManager.Instance.T("Error during initialization: No physical disks found!"));
                 return false;
             }
             return true;
@@ -576,8 +693,8 @@ namespace SSD_LED
             {
                 timer1.Enabled = false;
 
-                MessageBox.Show("Something went wrong... exiting...");
-                Log.Information("Too many errors in sequence -> Exiting...");
+                MessageBox.Show(TranslationManager.Instance.T("Something went wrong... exiting..."));
+                Log.Information(TranslationManager.Instance.T("Too many errors in sequence -> Exiting..."));
                 Log.CloseAndFlush();
                 Application.Exit();
             }
@@ -649,7 +766,7 @@ namespace SSD_LED
             //Close();
             removeTrayIcon();
 
-            Log.Information("Exiting...");
+            Log.Information(TranslationManager.Instance.T("Exiting..."));
             Log.CloseAndFlush();
             Application.Exit();
         }
@@ -724,7 +841,7 @@ namespace SSD_LED
             {
                 comboBox1.Enabled = false;
                 diskSelectionPFCStr = null;
-                Log.Information("Changed single drive monitoring - checked status: " + checkBox1.Checked);
+                Log.Information(TranslationManager.Instance.T("Changed single drive monitoring - checked status: ") + checkBox1.Checked);
             }
         }
 
@@ -735,16 +852,16 @@ namespace SSD_LED
             {
                 diskSelectionPFCStr = GetInstanceNameByDriveIndex(comboBox1.SelectedIndex);
                 Debug.WriteLine("Selected: " + diskSelectionPFCStr);
-                Log.Information("Selected single drive: " + comboBox1.Text + " which is index " + comboBox1.SelectedIndex + " of the drive list");
+                Log.Information(TranslationManager.Instance.T("Selected single drive: ") + comboBox1.Text + TranslationManager.Instance.T(" which is index ") + comboBox1.SelectedIndex + TranslationManager.Instance.T(" of the drive list"));
             }
             catch
             {
-                Log.Error("Changed drive selection didn't work!");
+                Log.Error(TranslationManager.Instance.T("Changed drive selection didn't work!"));
                 //unselect
                 comboBox1.SelectedIndex = -1;
                 diskSelectionPFCStr = backupSelectionStr;
                 checkBox1.Checked = false;
-                MessageBox.Show("Error while selection - aborting...");
+                MessageBox.Show(TranslationManager.Instance.T("Error while selection - aborting..."));
             }
         }
 
@@ -753,7 +870,7 @@ namespace SSD_LED
         #region settings load and save
         private bool loadSettings()
         {
-            Log.Information("Loading settings:");
+            Log.Information(TranslationManager.Instance.T("Loading settings:"));
             Log.Information("-----------------");
 
             int tempInt;
@@ -762,13 +879,13 @@ namespace SSD_LED
             {
                 int.TryParse(Properties.Settings.Default["MaxSpeed"].ToString(), out maxSpeedKBS);
                 trackBar1.Value = maxSpeedKBS;
-                Log.Information("max KBS: " + maxSpeedKBS);
+                Log.Information(TranslationManager.Instance.T("max KBS: ") + maxSpeedKBS);
                 int.TryParse(Properties.Settings.Default["RefreshIntervall"].ToString(), out tempInt);
                 timer1.Interval = tempInt;
                 trackBar2.Value = tempInt;
-                Log.Information("RefreshInterval: " + tempInt);
+                Log.Information(TranslationManager.Instance.T("RefreshInterval: ") + tempInt);
                 bool.TryParse(Properties.Settings.Default["DriveSelectedChecked"].ToString(), out tempBool);
-                Log.Information("SingleDrive monitoring: " + tempBool);
+                Log.Information(TranslationManager.Instance.T("SingleDrive monitoring: ") + tempBool);
                 if (tempBool)
                 {
                     diskSelectionPFCStr = Properties.Settings.Default["DriveSelected"].ToString();
@@ -787,25 +904,25 @@ namespace SSD_LED
                                 if (drv.Equals(diskSelectionPFCStr))
                                 {
                                     markerFound = true;
-                                    Log.Information("Successfully parsed single drive monitoring instance " + diskSelectionPFCStr);
+                                    Log.Information(TranslationManager.Instance.T("Successfully parsed single drive monitoring instance ") + diskSelectionPFCStr);
                                 }
                             }
                             if (markerFound == false)
                             {
-                                Log.Error("Error finding monitored drive!");
+                                Log.Error(TranslationManager.Instance.T("Error finding monitored drive!"));
                                 throw new Exception();
                             }
                         }
                         catch
                         {
-                            Log.Error("Error while getting physical disk list for plausi check!");
+                            Log.Error(TranslationManager.Instance.T("Error while getting physical disk list for plausi check!"));
                             diskSelectionPFCStr = null;
                             tempBool = false;
                         }
                     }
                     catch
                     {
-                        Log.Error("Error while getting physical disk category");
+                        Log.Error(TranslationManager.Instance.T("Error while getting physical disk category"));
                         diskSelectionPFCStr = null;
                         tempBool = false;
                     }
@@ -820,17 +937,42 @@ namespace SSD_LED
                 iconDefault = CreateIcon(defaultColor);
                 tbColorDefault.BackColor = defaultColor;
                 tbColorDefault.Text = defaultColor.ToString();
-                Log.Information("ColorDefault: " + defaultColor.ToString());
+                Log.Information(TranslationManager.Instance.T("ColorDefault: ") + defaultColor.ToString());
 
                 readColor = ColorTranslator.FromHtml(Properties.Settings.Default["ColorRead"].ToString());
                 tbColorRead.BackColor = readColor;
                 tbColorRead.Text = readColor.ToString();
-                Log.Information("ColorRead: " + readColor.ToString());
+                Log.Information(TranslationManager.Instance.T("ColorRead: ") + readColor.ToString());
 
                 writeColor = ColorTranslator.FromHtml(Properties.Settings.Default["ColorWrite"].ToString());
                 tbColorWrite.BackColor = writeColor;
                 tbColorWrite.Text = writeColor.ToString();
-                Log.Information("ColorWrite: " + writeColor.ToString());
+                Log.Information(TranslationManager.Instance.T("ColorWrite: ") + writeColor.ToString());
+
+                // Sprache laden
+                try
+                {
+                    string savedLanguage = Properties.Settings.Default["Language"].ToString();
+                    if (!string.IsNullOrEmpty(savedLanguage))
+                    {
+                        if (savedLanguage == "auto")
+                        {
+                            TranslationManager.Instance.LoadSystemLanguage();
+                        }
+                        else
+                        {
+                            TranslationManager.Instance.LoadLanguage(savedLanguage);
+                        }
+                        Log.Information("Loaded saved language preference: " + savedLanguage);
+
+                        // UI aktualisieren
+                        ApplyTranslations();
+                    }
+                }
+                catch
+                {
+                    Log.Warning("No saved language preference found, using default");
+                }
 
                 Log.Information("-----------------");
                 return true;
@@ -861,6 +1003,15 @@ namespace SSD_LED
             Properties.Settings.Default["ColorDefault"] = ToHexValue(defaultColor); //ColorTranslator.ToHtml(defaultColor);
             Properties.Settings.Default["ColorRead"] = ToHexValue(readColor);
             Properties.Settings.Default["ColorWrite"] = ToHexValue(writeColor);
+
+            // Sprache speichern
+            var selectedLang = cbxlanguage.SelectedItem as LanguageInfo;
+            if (selectedLang != null)
+            {
+                Properties.Settings.Default["Language"] = selectedLang.Code;
+                Log.Information("Saved language preference: " + selectedLang.Code);
+            }
+
             Properties.Settings.Default.Save();
         }
 
@@ -911,6 +1062,52 @@ namespace SSD_LED
 
             iconDefault = CreateIcon(defaultColor);
             enableMixColors = checkBox3.Checked;
+        }
+
+        private void cbxlanguage_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // Verhindere Rekursion während der ComboBox-Aktualisierung
+            if (_isUpdatingLanguageComboBox)
+                return;
+
+            if (cbxlanguage.SelectedItem == null)
+                return;
+
+            var selectedLang = cbxlanguage.SelectedItem as LanguageInfo;
+            if (selectedLang == null)
+                return;
+
+            string langToLoad = selectedLang.Code;
+
+            // Wenn "Auto" ausgewählt wurde
+            if (selectedLang.IsAuto)
+            {
+                TranslationManager.Instance.LoadSystemLanguage();
+                Log.Information("Language set to Auto (System Language)");
+            }
+            else
+            {
+                // Lade die ausgewählte Sprache
+                if (TranslationManager.Instance.LoadLanguage(langToLoad))
+                {
+                    Log.Information(TranslationManager.Instance.T("Language changed to") + " " + selectedLang.DisplayName);
+                }
+                else
+                {
+                    Log.Error("Failed to load language: " + langToLoad);
+                    return;
+                }
+            }
+
+            // UI aktualisieren
+            ApplyTranslations();
+
+            // Tray-Icon-Menü neu initialisieren (für Übersetzung)
+            if (notifyIcon != null)
+            {
+                removeTrayIcon();
+                initTrayIcon();
+            }
         }
     }
 

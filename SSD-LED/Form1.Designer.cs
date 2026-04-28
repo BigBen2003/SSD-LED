@@ -55,9 +55,12 @@
             this.label1 = new System.Windows.Forms.Label();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
+            this.lblLanguage = new System.Windows.Forms.Label();
+            this.cbxlanguage = new System.Windows.Forms.ComboBox();
             this.checkBox2 = new System.Windows.Forms.CheckBox();
             this.button5 = new System.Windows.Forms.Button();
             this.label4 = new System.Windows.Forms.Label();
+            this.checkBox3 = new System.Windows.Forms.CheckBox();
             this.btnSaveCfg2 = new System.Windows.Forms.Button();
             this.btnApplyColor = new System.Windows.Forms.Button();
             this.tbColorWrite = new System.Windows.Forms.TextBox();
@@ -67,7 +70,6 @@
             this.tbColorDefault = new System.Windows.Forms.TextBox();
             this.btnColorDefault = new System.Windows.Forms.Button();
             this.label5 = new System.Windows.Forms.Label();
-            this.checkBox3 = new System.Windows.Forms.CheckBox();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -350,6 +352,8 @@
             // 
             // splitContainer2.Panel1
             // 
+            this.splitContainer2.Panel1.Controls.Add(this.lblLanguage);
+            this.splitContainer2.Panel1.Controls.Add(this.cbxlanguage);
             this.splitContainer2.Panel1.Controls.Add(this.checkBox2);
             this.splitContainer2.Panel1.Controls.Add(this.button5);
             this.splitContainer2.Panel1.Controls.Add(this.label4);
@@ -369,6 +373,27 @@
             this.splitContainer2.Size = new System.Drawing.Size(518, 423);
             this.splitContainer2.SplitterDistance = 237;
             this.splitContainer2.TabIndex = 0;
+            // 
+            // lblLanguage
+            // 
+            this.lblLanguage.AutoSize = true;
+            this.lblLanguage.Location = new System.Drawing.Point(8, 75);
+            this.lblLanguage.Name = "lblLanguage";
+            this.lblLanguage.Size = new System.Drawing.Size(91, 13);
+            this.lblLanguage.TabIndex = 5;
+            this.lblLanguage.Text = "Select Language:";
+            // 
+            // cbxlanguage
+            // 
+            this.cbxlanguage.AllowDrop = true;
+            this.cbxlanguage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.cbxlanguage.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbxlanguage.FormattingEnabled = true;
+            this.cbxlanguage.Location = new System.Drawing.Point(11, 91);
+            this.cbxlanguage.Name = "cbxlanguage";
+            this.cbxlanguage.Size = new System.Drawing.Size(155, 21);
+            this.cbxlanguage.TabIndex = 0;
+            this.cbxlanguage.SelectedIndexChanged += new System.EventHandler(this.cbxlanguage_SelectedIndexChanged);
             // 
             // checkBox2
             // 
@@ -398,6 +423,18 @@
             this.label4.Size = new System.Drawing.Size(83, 13);
             this.label4.TabIndex = 0;
             this.label4.Text = "Autostart setting";
+            // 
+            // checkBox3
+            // 
+            this.checkBox3.AutoSize = true;
+            this.checkBox3.Checked = true;
+            this.checkBox3.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBox3.Location = new System.Drawing.Point(6, 108);
+            this.checkBox3.Name = "checkBox3";
+            this.checkBox3.Size = new System.Drawing.Size(172, 17);
+            this.checkBox3.TabIndex = 9;
+            this.checkBox3.Text = "enable color scaling (mixcolors)";
+            this.checkBox3.UseVisualStyleBackColor = true;
             // 
             // btnSaveCfg2
             // 
@@ -482,18 +519,6 @@
             this.label5.TabIndex = 0;
             this.label5.Text = "Color settings";
             // 
-            // checkBox3
-            // 
-            this.checkBox3.AutoSize = true;
-            this.checkBox3.Checked = true;
-            this.checkBox3.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox3.Location = new System.Drawing.Point(6, 108);
-            this.checkBox3.Name = "checkBox3";
-            this.checkBox3.Size = new System.Drawing.Size(172, 17);
-            this.checkBox3.TabIndex = 9;
-            this.checkBox3.Text = "enable color scaling (mixcolors)";
-            this.checkBox3.UseVisualStyleBackColor = true;
-            // 
             // SSDLED
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -564,6 +589,8 @@
         private System.Windows.Forms.Button btnApplyColor;
         private System.Windows.Forms.Button btnSaveCfg2;
         private System.Windows.Forms.CheckBox checkBox3;
+        private System.Windows.Forms.Label lblLanguage;
+        private System.Windows.Forms.ComboBox cbxlanguage;
     }
 }
 
