@@ -1,3 +1,7 @@
+Multilingual version: Download here: https://git.soeti.de/tools/ssd-led
+
+This branch is incomplete.
+--
 Build status (AppVeyor / GitHub Action)
 
 ![](https://ci.appveyor.com/api/projects/status/github/SIRprise/SSD-LED?branch=master&svg=true)
